@@ -26,7 +26,6 @@ android {
 
     defaultConfig {
         applicationId = "com.example.product_list_app"
-        // Cambiar minSdk de 21 a 23
         minSdk = 23
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode

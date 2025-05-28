@@ -1,14 +1,72 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/auth_service.dart';
+import '../services/traditional_auth_service.dart';
 import 'login_screen.dart';
 import 'product_list_screen.dart';
 
 class HomeScreen extends StatelessWidget {
-  final User user;
+  final User? user; // Para Firebase Auth
+  final Map<String, dynamic>? userData; // Para auth tradicional
+  final bool isTraditionalAuth;
+  
   final AuthService authService = AuthService();
 
-  HomeScreen({required this.user});
+  HomeScreen({
+    this.user,
+    this.userData,
+    required this.isTraditionalAuth,
+  });
+
+  String get displayName {
+    if (isTraditionalAuth && userData != null) {
+      // Intentar diferentes campos para el nombre
+      return userData!['firstName']?.toString() ?? 
+             userData!['username']?.toString() ?? 
+             userData!['name']?.toString() ?? 
+             'Usuario';
+    } else if (user != null) {
+      return user!.displayName ?? 'Usuario';
+    }
+    return 'Usuario';
+  }
+
+  String? get photoURL {
+    if (isTraditionalAuth && userData != null) {
+      return userData!['image']?.toString();
+    } else if (user != null) {
+      return user!.photoURL;
+    }
+    return null;
+  }
+
+  String get userInfo {
+    if (isTraditionalAuth && userData != null) {
+      return 'ID: ${userData!['id']} | Email: ${userData!['email'] ?? 'N/A'}';
+    } else if (user != null) {
+      return 'Email: ${user!.email ?? 'N/A'}';
+    }
+    return 'Sin información';
+  }
+
+  Future<void> _signOut(BuildContext context) async {
+    try {
+      if (isTraditionalAuth) {
+        await TraditionalAuthService.logout();
+      } else {
+        await authService.signOut();
+      }
+      
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => LoginScreen()),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al cerrar sesión: $e')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -18,34 +76,52 @@ class HomeScreen extends StatelessWidget {
           children: [
             CircleAvatar(
               radius: 16,
-              backgroundImage: user.photoURL != null 
-                ? NetworkImage(user.photoURL!) 
+              backgroundImage: photoURL != null 
+                ? NetworkImage(photoURL!) 
                 : null,
-              child: user.photoURL == null 
+              child: photoURL == null 
                 ? Icon(Icons.person, size: 16) 
                 : null,
             ),
             SizedBox(width: 12),
             Expanded(
-              child: Text(
-                'Hola ${user.displayName ?? 'Usuario'}',
-                overflow: TextOverflow.ellipsis,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Hola $displayName',
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontSize: 16),
+                  ),
+                  Text(
+                    isTraditionalAuth ? 'Sesión tradicional' : 'Sesión con Google',
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  ),
+                ],
               ),
             ),
           ],
         ),
         actions: [
           PopupMenuButton<String>(
-            onSelected: (value) async {
+            onSelected: (value) {
               if (value == 'logout') {
-                await authService.signOut();
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (_) => LoginScreen()),
-                );
+                _signOut(context);
+              } else if (value == 'info') {
+                _showUserInfo(context);
               }
             },
             itemBuilder: (BuildContext context) => [
+              PopupMenuItem<String>(
+                value: 'info',
+                child: Row(
+                  children: [
+                    Icon(Icons.info),
+                    SizedBox(width: 8),
+                    Text('Info de usuario'),
+                  ],
+                ),
+              ),
               PopupMenuItem<String>(
                 value: 'logout',
                 child: Row(
@@ -61,6 +137,36 @@ class HomeScreen extends StatelessWidget {
         ],
       ),
       body: ProductListScreen(),
+    );
+  }
+
+  void _showUserInfo(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Información del Usuario'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Nombre: $displayName'),
+            SizedBox(height: 8),
+            Text('Tipo de sesión: ${isTraditionalAuth ? 'Tradicional' : 'Google'}'),
+            SizedBox(height: 8),
+            Text(userInfo),
+            if (isTraditionalAuth && userData != null) ...[
+              SizedBox(height: 8),
+              Text('Token: ${userData!['token']?.toString().substring(0, 20) ?? 'N/A'}...'),
+            ],
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cerrar'),
+          ),
+        ],
+      ),
     );
   }
 }
