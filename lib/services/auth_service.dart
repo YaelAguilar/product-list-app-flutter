@@ -5,23 +5,51 @@ class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn();
 
-  Future<User?> signInWithGoogle() async {
-    final googleUser = await _googleSignIn.signIn();
-      if (googleUser == null) return null;
+  User? get currentUser => _auth.currentUser;
 
-      final googleAuth = await googleUser.authentication;
+  Stream<User?> get authStateChanges => _auth.authStateChanges();
+
+  Future<User?> signInWithGoogle() async {
+    try {
+      print('Iniciando proceso de autenticación...');
+      
+      await _googleSignIn.signOut();
+      
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      
+      if (googleUser == null) {
+        print('Usuario canceló el login');
+        return null;
+      }
+
+      print('Usuario seleccionado: ${googleUser.email}');
+
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      print('Tokens obtenidos');
+
       final credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
+
+      print('Credential creado, autenticando con Firebase...');
+      final UserCredential userCredential = await _auth.signInWithCredential(credential);
       
-      final userCredential = await
-    _auth.signInWithCredential(credential);
-        return userCredential.user;
+      print('Autenticación exitosa: ${userCredential.user?.email}');
+      return userCredential.user;
+    } catch (e) {
+      print('Error detallado en signInWithGoogle: $e');
+      return null;
+    }
   }
 
+  // Cerrar sesión
   Future<void> signOut() async {
-    await _googleSignIn.signOut();
-    await _auth.signOut();
+    try {
+      await _googleSignIn.signOut();
+      await _auth.signOut();
+    } catch (e) {
+      print('Error al cerrar sesión: $e');
+    }
   }
 }
