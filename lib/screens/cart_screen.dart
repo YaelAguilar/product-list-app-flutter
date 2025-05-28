@@ -1,61 +1,46 @@
 import 'package:flutter/material.dart';
 import '../cart/cart.dart';
-import '../models/product.dart';
+import '../theme/app_theme.dart';
+import '../widgets/neo_card.dart';
+import '../widgets/neo_button.dart';
+import '../cart/cart_notifier.dart';
 
 class CartScreen extends StatefulWidget {
+  const CartScreen({super.key});
+
   @override
-  _CartScreenState createState() => _CartScreenState();
+  CartScreenState createState() => CartScreenState();
 }
 
-class _CartScreenState extends State<CartScreen> {
+class CartScreenState extends State<CartScreen> {
   bool _isCheckingOut = false;
 
-  // Agrupar productos por ID para mostrar cantidad
-  Map<int, CartItem> _groupCartItems() {
-    final Map<int, CartItem> groupedItems = {};
-    
-    for (Product product in Cart.items) {
-      if (groupedItems.containsKey(product.id)) {
-        groupedItems[product.id]!.quantity++;
-      } else {
-        groupedItems[product.id] = CartItem(product: product, quantity: 1);
-      }
-    }
-    
-    return groupedItems;
-  }
-
   Future<void> _checkout() async {
-    if (Cart.items.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('El carrito está vacío')),
-      );
-      return;
-    }
-
     setState(() {
       _isCheckingOut = true;
     });
 
     try {
-      final response = await Cart.checkout();
+      final result = await CartNotifier().checkout();
       
-      // Limpiar carrito después de la compra exitosa
-      Cart.clear();
-      
-      setState(() {});
-      
-      // Mostrar mensaje de éxito
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Compra realizada con éxito. ID de orden: ${response['id']}'),
-          duration: Duration(seconds: 4),
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('¡Compra realizada exitosamente! ID: ${result['id']}'),
+            backgroundColor: AppTheme.successColor,
+          ),
+        );
+        Navigator.pop(context);
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error al procesar la compra: $e')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error en la compra: $e'),
+            backgroundColor: AppTheme.errorColor,
+          ),
+        );
+      }
     } finally {
       setState(() {
         _isCheckingOut = false;
@@ -65,143 +50,178 @@ class _CartScreenState extends State<CartScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final groupedItems = _groupCartItems();
-    final items = groupedItems.values.toList();
-
     return Scaffold(
-      appBar: AppBar(title: Text('Carrito de Compras')),
-      body: items.isEmpty
-        ? Center(child: Text('El carrito está vacío', style: TextStyle(fontSize: 18)))
-        : ListView.builder(
-            itemCount: items.length,
-            itemBuilder: (context, index) {
-              final item = items[index];
-              final product = item.product;
-              
-              return Card(
-                margin: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Row(
-                    children: [
-                      // Imagen del producto
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(4.0),
-                        child: Image.network(
-                          product.image,
-                          width: 60,
-                          height: 60,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Container(
-                              width: 60,
-                              height: 60,
-                              color: Colors.grey[300],
-                              child: Icon(Icons.image_not_supported),
-                            );
-                          },
-                        ),
-                      ),
-                      SizedBox(width: 16),
-                      
-                      // Información del producto
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              product.title,
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            SizedBox(height: 4),
-                            Text('\$${product.price.toStringAsFixed(2)}'),
-                            SizedBox(height: 4),
-                            Text('Cantidad: ${item.quantity}'),
-                          ],
-                        ),
-                      ),
-                      
-                      // Botones de acción
-                      Column(
-                        children: [
-                          IconButton(
-                            icon: Icon(Icons.add_circle_outline, color: Colors.blue),
-                            onPressed: () {
-                              setState(() {
-                                Cart.add(product);
-                              });
-                            },
+      backgroundColor: AppTheme.primaryDark,
+      appBar: AppBar(
+        title: Text('Carrito de Compras'),
+        backgroundColor: AppTheme.secondaryDark,
+        elevation: 0,
+      ),
+      body: Cart.isEmpty
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.shopping_cart_outlined,
+                    size: 64,
+                    color: AppTheme.textSecondary,
+                  ),
+                  SizedBox(height: 16),
+                  Text(
+                    'Tu carrito está vacío',
+                    style: TextStyle(
+                      color: AppTheme.textSecondary,
+                      fontSize: 18,
+                    ),
+                  ),
+                ],
+              ),
+            )
+          : Column(
+              children: [
+                Expanded(
+                  child: ListView.builder(
+                    padding: EdgeInsets.all(16),
+                    itemCount: Cart.items.length,
+                    itemBuilder: (context, index) {
+                      final item = Cart.items[index];
+                      return Padding(
+                        padding: EdgeInsets.only(bottom: 16),
+                        child: NeoCard(
+                          child: Row(
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Image.network(
+                                  item.product.thumbnail,
+                                  width: 60,
+                                  height: 60,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Container(
+                                      width: 60,
+                                      height: 60,
+                                      color: AppTheme.cardBackground,
+                                      child: Icon(
+                                        Icons.image_not_supported,
+                                        color: AppTheme.textSecondary,
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                              SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      item.product.title,
+                                      style: TextStyle(
+                                        color: AppTheme.textPrimary,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    SizedBox(height: 4),
+                                    Text(
+                                      '\$${item.product.price.toStringAsFixed(2)}',
+                                      style: TextStyle(
+                                        color: AppTheme.accentGreen,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Row(
+                                children: [
+                                  IconButton(
+                                    onPressed: () {
+                                      setState(() {
+                                        Cart.remove(item.product);
+                                      });
+                                    },
+                                    icon: Icon(
+                                      Icons.remove_circle_outline,
+                                      color: AppTheme.errorColor,
+                                    ),
+                                  ),
+                                  Text(
+                                    '${item.quantity}',
+                                    style: TextStyle(
+                                      color: AppTheme.textPrimary,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  IconButton(
+                                    onPressed: () {
+                                      setState(() {
+                                        Cart.add(item.product);
+                                      });
+                                    },
+                                    icon: Icon(
+                                      Icons.add_circle_outline,
+                                      color: AppTheme.accentGreen,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
                           ),
-                          IconButton(
-                            icon: Icon(Icons.remove_circle_outline, color: Colors.red),
-                            onPressed: () {
-                              setState(() {
-                                Cart.remove(product);
-                              });
-                            },
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                Container(
+                  padding: EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppTheme.secondaryDark,
+                    border: Border(
+                      top: BorderSide(color: AppTheme.borderColor),
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Total:',
+                            style: TextStyle(
+                              color: AppTheme.textPrimary,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            '\$${Cart.total.toStringAsFixed(2)}',
+                            style: TextStyle(
+                              color: AppTheme.accentGreen,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ],
+                      ),
+                      SizedBox(height: 16),
+                      SizedBox(
+                        width: double.infinity,
+                        child: NeoButton(
+                          text: 'FINALIZAR COMPRA',
+                          onPressed: _isCheckingOut ? null : _checkout,
+                          isLoading: _isCheckingOut,
+                          icon: Icons.payment,
+                        ),
                       ),
                     ],
                   ),
                 ),
-              );
-            },
-          ),
-      bottomNavigationBar: Container(
-        padding: EdgeInsets.all(16.0),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black12,
-              blurRadius: 4,
-              offset: Offset(0, -2),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Total:',
-                  style: TextStyle(fontSize: 18),
-                ),
-                Text(
-                  '\$${Cart.total.toStringAsFixed(2)}',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
               ],
             ),
-            SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _isCheckingOut ? null : _checkout,
-                style: ElevatedButton.styleFrom(
-                  padding: EdgeInsets.symmetric(vertical: 12),
-                ),
-                child: _isCheckingOut
-                    ? CircularProgressIndicator(color: Colors.white)
-                    : Text('Finalizar Compra', style: TextStyle(fontSize: 16)),
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
-}
-
-// Clase auxiliar para agrupar productos
-class CartItem {
-  final Product product;
-  int quantity;
-
-  CartItem({required this.product, this.quantity = 1});
 }

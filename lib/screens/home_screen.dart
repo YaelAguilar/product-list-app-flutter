@@ -4,6 +4,8 @@ import '../services/auth_service.dart';
 import '../services/traditional_auth_service.dart';
 import 'login_screen.dart';
 import 'product_list_screen.dart';
+import '../theme/app_theme.dart';
+import '../widgets/cart_icon.dart';
 
 class HomeScreen extends StatelessWidget {
   final User? user; // Para Firebase Auth
@@ -13,6 +15,7 @@ class HomeScreen extends StatelessWidget {
   final AuthService authService = AuthService();
 
   HomeScreen({
+    super.key,
     this.user,
     this.userData,
     required this.isTraditionalAuth,
@@ -57,15 +60,49 @@ class HomeScreen extends StatelessWidget {
         await authService.signOut();
       }
       
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => LoginScreen()),
-      );
+      if (context.mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => LoginScreen()),
+        );
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error al cerrar sesión: $e')),
-      );
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al cerrar sesión: $e')),
+        );
+      }
     }
+  }
+
+  void _showUserInfo(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Información del Usuario'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Nombre: $displayName'),
+            SizedBox(height: 8),
+            Text('Tipo de sesión: ${isTraditionalAuth ? 'Tradicional' : 'Google'}'),
+            SizedBox(height: 8),
+            Text(userInfo),
+            if (isTraditionalAuth && userData != null) ...[
+              SizedBox(height: 8),
+              Text('Token: ${userData!['token']?.toString().substring(0, 20) ?? 'N/A'}...'),
+            ],
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cerrar'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -103,6 +140,11 @@ class HomeScreen extends StatelessWidget {
           ],
         ),
         actions: [
+          CartIcon(
+            onTap: () {
+              Navigator.pushNamed(context, '/cart');
+            },
+          ),
           PopupMenuButton<String>(
             onSelected: (value) {
               if (value == 'logout') {
@@ -135,37 +177,12 @@ class HomeScreen extends StatelessWidget {
             ],
           ),
         ],
+        backgroundColor: AppTheme.secondaryDark,
+        elevation: 0,
       ),
-      body: ProductListScreen(),
-    );
-  }
-
-  void _showUserInfo(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Información del Usuario'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Nombre: $displayName'),
-            SizedBox(height: 8),
-            Text('Tipo de sesión: ${isTraditionalAuth ? 'Tradicional' : 'Google'}'),
-            SizedBox(height: 8),
-            Text(userInfo),
-            if (isTraditionalAuth && userData != null) ...[
-              SizedBox(height: 8),
-              Text('Token: ${userData!['token']?.toString().substring(0, 20) ?? 'N/A'}...'),
-            ],
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Cerrar'),
-          ),
-        ],
+      body: Container(
+        color: AppTheme.primaryDark,
+        child: ProductListScreen(),
       ),
     );
   }

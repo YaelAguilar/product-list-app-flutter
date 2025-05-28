@@ -4,8 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class TraditionalAuthService {
   static const String _baseUrl = 'https://dummyjson.com/auth';
-  
-  // Modelo para respuesta de login
+
   static Future<Map<String, dynamic>?> loginWithCredentials(
     String username, 
     String password
@@ -29,16 +28,13 @@ class TraditionalAuthService {
         final data = jsonDecode(response.body);
         print('Datos recibidos: $data');
         
-        // DummyJSON devuelve 'accessToken' en lugar de 'token'
         String? token = data['accessToken'] ?? data['token'];
         
         if (token != null) {
           print('Token encontrado: ${token.substring(0, 20)}...');
           
-          // Agregar el token al objeto de datos para compatibilidad
           data['token'] = token;
           
-          // Guardar token en SharedPreferences
           await _saveToken(token);
           await _saveUserData(data);
           
@@ -59,7 +55,6 @@ class TraditionalAuthService {
     }
   }
 
-  // Guardar token
   static Future<void> _saveToken(String token) async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -70,7 +65,6 @@ class TraditionalAuthService {
     }
   }
 
-  // Guardar datos del usuario
   static Future<void> _saveUserData(Map<String, dynamic> userData) async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -81,7 +75,6 @@ class TraditionalAuthService {
     }
   }
 
-  // Obtener token guardado
   static Future<String?> getToken() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -92,7 +85,6 @@ class TraditionalAuthService {
     }
   }
 
-  // Obtener datos del usuario guardados
   static Future<Map<String, dynamic>?> getUserData() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -119,7 +111,6 @@ class TraditionalAuthService {
     }
   }
 
-  // Verificar si hay sesión activa
   static Future<bool> hasActiveSession() async {
     try {
       final token = await getToken();
@@ -132,7 +123,6 @@ class TraditionalAuthService {
     }
   }
 
-  // Método para probar la API
   static Future<void> testAPI() async {
     try {
       final response = await http.get(
@@ -147,7 +137,6 @@ class TraditionalAuthService {
     }
   }
 
-  // Método para obtener información del usuario actual con el token
   static Future<Map<String, dynamic>?> getCurrentUser() async {
     try {
       final token = await getToken();
@@ -168,5 +157,26 @@ class TraditionalAuthService {
       print('Error obteniendo usuario actual: $e');
       return null;
     }
+  }
+
+  static List<Map<String, String>> getValidCredentials() {
+    return [
+      {
+        'username': 'michaelw', 
+        'password': 'michaelwpass', 
+        'name': 'Michael Williams',
+        'description': 'Desarrollador de Software',
+        'role': 'Senior Developer',
+        'status': 'Verificado ✓'
+      },
+      {
+        'username': 'jamesd', 
+        'password': 'jamesdpass', 
+        'name': 'James Davis',
+        'description': 'Diseñador UX/UI',
+        'role': 'Lead Designer',
+        'status': 'Verificado ✓'
+      },
+    ];
   }
 }

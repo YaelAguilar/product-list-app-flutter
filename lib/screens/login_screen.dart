@@ -1,14 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import '../services/auth_service.dart';
 import '../services/traditional_auth_service.dart';
 import 'home_screen.dart';
+import '../theme/app_theme.dart';
+import '../widgets/neo_button.dart';
+import '../widgets/neo_card.dart';
+import '../widgets/neo_text_field.dart';
 
 class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
+
   @override
-  _LoginScreenState createState() => _LoginScreenState();
+  LoginScreenState createState() => LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class LoginScreenState extends State<LoginScreen> {
   final AuthService authService = AuthService();
   final userController = TextEditingController();
   final passController = TextEditingController();
@@ -17,13 +24,38 @@ class _LoginScreenState extends State<LoginScreen> {
   String success = '';
   bool _isLoading = false;
   bool _showTraditionalLogin = false;
+  int _selectedUserIndex = 0;
+  bool _obscurePassword = true;
+
+  // Lista de usuarios masculinos que funcionan realmente
+  final List<Map<String, String>> _availableUsers = [
+    {
+      'username': 'michaelw', 
+      'password': 'michaelwpass', 
+      'name': 'Michael Williams',
+      'description': 'Desarrollador de Software'
+    },
+    {
+      'username': 'jamesd', 
+      'password': 'jamesdpass', 
+      'name': 'James Davis',
+      'description': 'Diseñador UX/UI'
+    },
+  ];
 
   @override
   void initState() {
     super.initState();
-    // Llenar con credenciales de prueba por defecto
-    userController.text = 'yaels';
-    passController.text = 'yaelspass';
+    // Llenar con credenciales de Michael Williams por defecto
+    _updateCredentials(0);
+  }
+
+  void _updateCredentials(int index) {
+    setState(() {
+      _selectedUserIndex = index;
+      userController.text = _availableUsers[index]['username']!;
+      passController.text = _availableUsers[index]['password']!;
+    });
   }
 
   // Login con credenciales tradicionales
@@ -43,7 +75,9 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      print('Iniciando login tradicional...');
+      if (kDebugMode) {
+        print('Iniciando login tradicional...');
+      }
       
       // Probar la API primero
       await TraditionalAuthService.testAPI();
@@ -58,27 +92,33 @@ class _LoginScreenState extends State<LoginScreen> {
           success = 'Login exitoso! Redirigiendo...';
         });
         
-        print('Login exitoso, navegando a HomeScreen');
+        if (kDebugMode) {
+          print('Login exitoso, navegando a HomeScreen');
+        }
         
         // Pequeña pausa para mostrar el mensaje de éxito
         await Future.delayed(Duration(milliseconds: 500));
         
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (_) => HomeScreen(
-              userData: userData,
-              isTraditionalAuth: true,
+        if (mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (_) => HomeScreen(
+                userData: userData,
+                isTraditionalAuth: true,
+              ),
             ),
-          ),
-        );
+          );
+        }
       } else {
         setState(() {
-          error = 'Credenciales inválidas o error del servidor';
+          error = 'Credenciales inválidas. Verifica usuario y contraseña.';
         });
       }
     } catch (e) {
-      print('Error en loginWithCredentials: $e');
+      if (kDebugMode) {
+        print('Error en loginWithCredentials: $e');
+      }
       setState(() {
         error = 'Error de conexión: $e';
       });
@@ -99,7 +139,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       final user = await authService.signInWithGoogle();
-      if (user != null) {
+      if (user != null && mounted) {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
@@ -128,237 +168,406 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppTheme.primaryDark,
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Colors.blue[400]!, Colors.blue[800]!],
+            colors: [
+              AppTheme.primaryDark,
+              AppTheme.secondaryDark,
+            ],
           ),
         ),
         child: SafeArea(
           child: Center(
-            child: Padding(
-              padding: const EdgeInsets.all(32.0),
-              child: Card(
-                elevation: 8,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(24.0),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Logo o título
-                      Icon(
-                        Icons.shopping_bag,
-                        size: 80,
-                        color: Colors.blue[800],
-                      ),
-                      SizedBox(height: 24),
-                      Text(
-                        'Tienda de Productos',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.blue[800],
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24.0),
+              child: NeoCard(
+                glowEffect: true,
+                padding: EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Logo futurista
+                    Container(
+                      width: 100,
+                      height: 100,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            AppTheme.accentGreen,
+                            AppTheme.accentGreenDark,
+                          ],
                         ),
-                      ),
-                      SizedBox(height: 32),
-
-                      // Alternar entre tipos de login
-                      Row(
-                        children: [
-                          Expanded(
-                            child: ElevatedButton(
-                              onPressed: () {
-                                setState(() {
-                                  _showTraditionalLogin = false;
-                                  error = '';
-                                  success = '';
-                                });
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: !_showTraditionalLogin 
-                                  ? Colors.blue[800] 
-                                  : Colors.grey[300],
-                                foregroundColor: !_showTraditionalLogin 
-                                  ? Colors.white 
-                                  : Colors.black,
-                              ),
-                              child: Text('Google'),
-                            ),
-                          ),
-                          SizedBox(width: 16),
-                          Expanded(
-                            child: ElevatedButton(
-                              onPressed: () {
-                                setState(() {
-                                  _showTraditionalLogin = true;
-                                  error = '';
-                                  success = '';
-                                });
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: _showTraditionalLogin 
-                                  ? Colors.blue[800] 
-                                  : Colors.grey[300],
-                                foregroundColor: _showTraditionalLogin 
-                                  ? Colors.white 
-                                  : Colors.black,
-                              ),
-                              child: Text('Usuario/Contraseña'),
-                            ),
+                        borderRadius: BorderRadius.circular(25),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppTheme.accentGreen.withValues(alpha: 0.4),
+                            blurRadius: 20,
+                            offset: Offset(0, 10),
                           ),
                         ],
                       ),
-                      SizedBox(height: 24),
+                      child: Icon(
+                        Icons.shopping_bag_outlined,
+                        size: 50,
+                        color: AppTheme.primaryDark,
+                      ),
+                    ),
+                    SizedBox(height: 24),
+                    
+                    // Título
+                    Text(
+                      'NEO STORE',
+                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                        color: AppTheme.accentGreen,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 2,
+                      ),
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      'Tienda del Futuro',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppTheme.textSecondary,
+                        letterSpacing: 1,
+                      ),
+                    ),
+                    SizedBox(height: 32),
 
-                      // Formulario según el tipo seleccionado
-                      if (_showTraditionalLogin) ...[
-                        // Login tradicional
-                        TextField(
-                          controller: userController,
-                          decoration: InputDecoration(
-                            labelText: 'Usuario',
-                            border: OutlineInputBorder(),
-                            prefixIcon: Icon(Icons.person),
-                            hintText: 'yaels',
+                    // Selector de tipo de login
+                    Row(
+                      children: [
+                        Expanded(
+                          child: NeoButton(
+                            text: 'Google',
+                            isSecondary: _showTraditionalLogin,
+                            onPressed: () {
+                              setState(() {
+                                _showTraditionalLogin = false;
+                                error = '';
+                                success = '';
+                              });
+                            },
                           ),
                         ),
-                        SizedBox(height: 16),
-                        TextField(
+                        SizedBox(width: 16),
+                        Expanded(
+                          child: NeoButton(
+                            text: 'Usuario',
+                            isSecondary: !_showTraditionalLogin,
+                            onPressed: () {
+                              setState(() {
+                                _showTraditionalLogin = true;
+                                error = '';
+                                success = '';
+                              });
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 32),
+
+                    // Formulario según el tipo seleccionado
+                    if (_showTraditionalLogin) ...[
+                      // Selector de usuario
+                      Container(
+                        padding: EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: AppTheme.cardBackground,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppTheme.borderColor),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Seleccionar Usuario:',
+                              style: TextStyle(
+                                color: AppTheme.accentGreen,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                              ),
+                            ),
+                            SizedBox(height: 12),
+                            ...List.generate(_availableUsers.length, (index) {
+                              final user = _availableUsers[index];
+                              return GestureDetector(
+                                onTap: () => _updateCredentials(index),
+                                child: Container(
+                                  margin: EdgeInsets.only(bottom: 8),
+                                  padding: EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: _selectedUserIndex == index 
+                                        ? AppTheme.accentGreen.withValues(alpha: 0.1)
+                                        : Colors.transparent,
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                      color: _selectedUserIndex == index 
+                                          ? AppTheme.accentGreen
+                                          : AppTheme.borderColor,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        _selectedUserIndex == index 
+                                            ? Icons.radio_button_checked
+                                            : Icons.radio_button_unchecked,
+                                        color: _selectedUserIndex == index 
+                                            ? AppTheme.accentGreen
+                                            : AppTheme.textSecondary,
+                                        size: 20,
+                                      ),
+                                      SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              user['name']!,
+                                              style: TextStyle(
+                                                color: AppTheme.textPrimary,
+                                                fontWeight: FontWeight.w600,
+                                                fontSize: 14,
+                                              ),
+                                            ),
+                                            Text(
+                                              user['description']!,
+                                              style: TextStyle(
+                                                color: AppTheme.textSecondary,
+                                                fontSize: 12,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            }),
+                          ],
+                        ),
+                      ),
+                      SizedBox(height: 20),
+                      
+                      // Login tradicional
+                      NeoTextField(
+                        controller: userController,
+                        labelText: 'Usuario',
+                        hintText: _availableUsers[_selectedUserIndex]['username'],
+                        prefixIcon: Icons.person_outline,
+                      ),
+                      SizedBox(height: 20),
+                      
+                      // Campo de contraseña con botón para mostrar/ocultar
+                      Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.1),
+                              blurRadius: 8,
+                              offset: Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: TextField(
                           controller: passController,
-                          obscureText: true,
+                          obscureText: _obscurePassword,
+                          style: TextStyle(
+                            color: AppTheme.textPrimary,
+                            fontSize: 16,
+                          ),
                           decoration: InputDecoration(
                             labelText: 'Contraseña',
-                            border: OutlineInputBorder(),
-                            prefixIcon: Icon(Icons.lock),
-                            hintText: 'yaelspass',
-                          ),
-                        ),
-                        SizedBox(height: 24),
-                        SizedBox(
-                          width: double.infinity,
-                          height: 48,
-                          child: ElevatedButton(
-                            onPressed: _isLoading ? null : loginWithCredentials,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.blue[800],
-                              foregroundColor: Colors.white,
+                            hintText: _availableUsers[_selectedUserIndex]['password'],
+                            prefixIcon: Icon(
+                              Icons.lock_outline,
+                              color: AppTheme.textSecondary,
                             ),
-                            child: _isLoading
-                              ? CircularProgressIndicator(color: Colors.white)
-                              : Text('Iniciar Sesión'),
-                          ),
-                        ),
-                        SizedBox(height: 16),
-                        Container(
-                          padding: EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.blue[50],
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.blue[300]!),
-                          ),
-                          child: Column(
-                            children: [
-                              Text(
-                                'Credenciales de prueba:',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.blue[800],
-                                ),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _obscurePassword 
+                                    ? Icons.visibility_outlined 
+                                    : Icons.visibility_off_outlined,
+                                color: AppTheme.textSecondary,
                               ),
-                              SizedBox(height: 4),
-                              Text(
-                                'Usuario: yaels\nContraseña: yaelspass',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.blue[700],
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ] else ...[
-                        // Login con Google
-                        SizedBox(
-                          width: double.infinity,
-                          height: 48,
-                          child: ElevatedButton.icon(
-                            onPressed: _isLoading ? null : loginWithGoogle,
-                            icon: _isLoading 
-                              ? SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
-                                )
-                              : Icon(Icons.login),
-                            label: Text(
-                              _isLoading ? 'Iniciando sesión...' : 'Iniciar sesión con Google',
+                              onPressed: () {
+                                setState(() {
+                                  _obscurePassword = !_obscurePassword;
+                                });
+                              },
                             ),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.white,
-                              foregroundColor: Colors.blue[800],
-                              side: BorderSide(color: Colors.blue[800]!),
+                            filled: true,
+                            fillColor: AppTheme.cardBackground,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: AppTheme.borderColor),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: AppTheme.borderColor),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: AppTheme.accentGreen, width: 2),
+                            ),
+                            labelStyle: TextStyle(
+                              color: AppTheme.textSecondary,
+                            ),
+                            hintStyle: TextStyle(
+                              color: AppTheme.textSecondary.withValues(alpha: 0.7),
                             ),
                           ),
                         ),
-                      ],
-
-                      // Mostrar mensajes de éxito
-                      if (success.isNotEmpty) ...[
-                        SizedBox(height: 16),
-                        Container(
-                          padding: EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.green[50],
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.green[300]!),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(Icons.check_circle, color: Colors.green[700], size: 20),
-                              SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  success,
-                                  style: TextStyle(color: Colors.green[700]),
-                                ),
-                              ),
-                            ],
+                      ),
+                      SizedBox(height: 32),
+                      SizedBox(
+                        width: double.infinity,
+                        child: NeoButton(
+                          text: 'INICIAR SESIÓN',
+                          onPressed: _isLoading ? null : loginWithCredentials,
+                          isLoading: _isLoading,
+                          icon: Icons.login,
+                        ),
+                      ),
+                      SizedBox(height: 20),
+                      
+                      // Info del usuario seleccionado
+                      Container(
+                        padding: EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: AppTheme.accentGreen.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: AppTheme.accentGreen.withValues(alpha: 0.3),
                           ),
                         ),
-                      ],
-
-                      // Mostrar errores
-                      if (error.isNotEmpty) ...[
-                        SizedBox(height: 16),
-                        Container(
-                          padding: EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.red[50],
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.red[300]!),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(Icons.error, color: Colors.red[700], size: 20),
-                              SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  error,
-                                  style: TextStyle(color: Colors.red[700]),
+                        child: Column(
+                          children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.verified_user,
+                                  color: AppTheme.accentGreen,
+                                  size: 20,
                                 ),
-                              ),
-                            ],
-                          ),
+                                SizedBox(width: 8),
+                                Text(
+                                  'Usuario Real de DummyJSON',
+                                  style: TextStyle(
+                                    color: AppTheme.accentGreen,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: 8),
+                            Column(
+                              children: [
+                                Text(
+                                  _availableUsers[_selectedUserIndex]['name']!,
+                                  style: TextStyle(
+                                    color: AppTheme.textPrimary,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                                Text(
+                                  _availableUsers[_selectedUserIndex]['description']!,
+                                  style: TextStyle(
+                                    color: AppTheme.textSecondary,
+                                    fontSize: 12,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
+                    ] else ...[
+                      // Login con Google
+                      SizedBox(
+                        width: double.infinity,
+                        child: NeoButton(
+                          text: 'CONTINUAR CON GOOGLE',
+                          onPressed: _isLoading ? null : loginWithGoogle,
+                          isLoading: _isLoading,
+                          icon: Icons.login,
+                          isSecondary: true,
+                        ),
+                      ),
                     ],
-                  ),
+
+                    // Mostrar mensajes de éxito
+                    if (success.isNotEmpty) ...[
+                      SizedBox(height: 20),
+                      Container(
+                        padding: EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: AppTheme.successColor.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: AppTheme.successColor.withValues(alpha: 0.3),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.check_circle_outline,
+                              color: AppTheme.successColor,
+                              size: 20,
+                            ),
+                            SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                success,
+                                style: TextStyle(color: AppTheme.successColor),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+
+                    // Mostrar errores
+                    if (error.isNotEmpty) ...[
+                      SizedBox(height: 20),
+                      Container(
+                        padding: EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: AppTheme.errorColor.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: AppTheme.errorColor.withValues(alpha: 0.3),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.error_outline,
+                              color: AppTheme.errorColor,
+                              size: 20,
+                            ),
+                            SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                error,
+                                style: TextStyle(color: AppTheme.errorColor),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
             ),

@@ -4,6 +4,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'services/traditional_auth_service.dart';
 import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
+import 'theme/app_theme.dart';
+import 'screens/cart_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -13,21 +15,25 @@ void main() async {
 }
 
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Productos',
+      title: 'Neo Store',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        visualDensity: VisualDensity.adaptivePlatformDensity,
-      ),
+      theme: AppTheme.darkTheme,
+      routes: {
+        '/cart': (context) => CartScreen(),
+      },
       home: AuthWrapper(),
     );
   }
 }
 
 class AuthWrapper extends StatelessWidget {
+  const AuthWrapper({super.key});
+
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<Widget>(
@@ -35,7 +41,51 @@ class AuthWrapper extends StatelessWidget {
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Scaffold(
-            body: Center(child: CircularProgressIndicator()),
+            backgroundColor: AppTheme.primaryDark,
+            body: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          AppTheme.accentGreen,
+                          AppTheme.accentGreenDark,
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppTheme.accentGreen.withValues(alpha: 0.3),
+                          blurRadius: 20,
+                          offset: Offset(0, 10),
+                        ),
+                      ],
+                    ),
+                    child: Icon(
+                      Icons.shopping_bag_outlined,
+                      color: AppTheme.primaryDark,
+                      size: 40,
+                    ),
+                  ),
+                  SizedBox(height: 24),
+                  CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(AppTheme.accentGreen),
+                  ),
+                  SizedBox(height: 16),
+                  Text(
+                    'Cargando...',
+                    style: TextStyle(
+                      color: AppTheme.textSecondary,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           );
         }
         return snapshot.data ?? LoginScreen();
