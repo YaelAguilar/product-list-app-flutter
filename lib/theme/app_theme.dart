@@ -19,7 +19,6 @@ class AppTheme {
       scaffoldBackgroundColor: primaryDark,
       cardColor: cardBackground,
       
-      // AppBar Theme
       appBarTheme: AppBarTheme(
         backgroundColor: secondaryDark,
         elevation: 0,
@@ -32,7 +31,6 @@ class AppTheme {
         iconTheme: IconThemeData(color: accentGreen),
       ),
       
-      // Text Theme
       textTheme: TextTheme(
         headlineLarge: TextStyle(
           color: textPrimary,
@@ -61,10 +59,11 @@ class AppTheme {
       ),
       
       // Card Theme
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: cardBackground,
         elevation: 8,
-        shadowColor: accentGreen.withValues(alpha: 0.1),
+        // ignore: deprecated_member_use
+        shadowColor: accentGreen.withOpacity(0.1),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
           side: BorderSide(
@@ -74,7 +73,6 @@ class AppTheme {
         ),
       ),
       
-      // Input Decoration Theme
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: cardBackground,
@@ -91,10 +89,10 @@ class AppTheme {
           borderSide: BorderSide(color: accentGreen, width: 2),
         ),
         labelStyle: TextStyle(color: textSecondary),
-        hintStyle: TextStyle(color: textSecondary.withValues(alpha: 0.7)),
+        // ignore: deprecated_member_use
+        hintStyle: TextStyle(color: textSecondary.withOpacity(0.7)),
       ),
       
-      // Elevated Button Theme
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: accentGreen,

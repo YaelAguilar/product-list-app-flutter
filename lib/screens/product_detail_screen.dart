@@ -23,7 +23,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       _isAddingToCart = true;
     });
 
-    // Simular un pequeño retraso para mostrar el efecto de carga
     Future.delayed(Duration(milliseconds: 300), () {
       if (mounted) {
         CartNotifier().addProduct(widget.product);
@@ -75,7 +74,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Imagen principal con carrusel
             Container(
               height: 300,
               width: double.infinity,
@@ -84,7 +82,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               ),
               child: Stack(
                 children: [
-                  // Imagen principal
                   PageView.builder(
                     itemCount: widget.product.images.length,
                     onPageChanged: (index) {
@@ -115,7 +112,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     },
                   ),
                   
-                  // Indicadores de página
                   if (widget.product.images.length > 1)
                     Positioned(
                       bottom: 16,
@@ -140,7 +136,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       ),
                     ),
                   
-                  // Descuento
                   if (widget.product.discountPercentage > 0)
                     Positioned(
                       top: 16,
@@ -172,13 +167,11 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               ),
             ),
             
-            // Información del producto
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Título y categoría
                   Text(
                     widget.product.title,
                     style: TextStyle(
@@ -198,7 +191,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   ),
                   SizedBox(height: 16),
                   
-                  // Precio
                   Row(
                     children: [
                       Text(
@@ -223,7 +215,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   ),
                   SizedBox(height: 16),
                   
-                  // Rating
                   Row(
                     children: [
                       ...List.generate(5, (index) {
@@ -239,7 +230,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       }),
                       SizedBox(width: 8),
                       Text(
-                        '${widget.product.rating.toStringAsFixed(1)}',
+                        widget.product.rating.toStringAsFixed(1),
                         style: TextStyle(
                           color: AppTheme.textSecondary,
                           fontSize: 16,
@@ -250,7 +241,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   ),
                   SizedBox(height: 24),
                   
-                  // Descripción
                   NeoCard(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -277,7 +267,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   ),
                   SizedBox(height: 24),
                   
-                  // Detalles adicionales
                   NeoCard(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -299,7 +288,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   ),
                   SizedBox(height: 32),
                   
-                  // Botón de agregar al carrito
                   SizedBox(
                     width: double.infinity,
                     child: NeoButton(

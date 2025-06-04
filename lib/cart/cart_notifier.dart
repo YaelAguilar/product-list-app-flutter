@@ -34,11 +34,10 @@ class CartNotifier extends ChangeNotifier {
   Future<Map<String, dynamic>> checkout() async {
     try {
       final result = await Cart.checkout();
-      // Después del checkout exitoso, limpiar y notificar
       clearCart();
       return result;
     } catch (e) {
-      throw e;
+      rethrow;
     }
   }
 

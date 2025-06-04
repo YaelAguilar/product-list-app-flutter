@@ -172,13 +172,12 @@ class ProductListScreenState extends State<ProductListScreen> with SingleTickerP
           itemBuilder: (context, index) {
             final product = _products[index];
             
-            // Crear una animación para cada producto
             final animation = Tween<double>(begin: 0.0, end: 1.0).animate(
               CurvedAnimation(
                 parent: _animationController,
                 curve: Interval(
-                  index / _products.length * 0.5, // Inicio escalonado
-                  0.5 + index / _products.length * 0.5, // Fin escalonado
+                  index / _products.length * 0.5,
+                  0.5 + index / _products.length * 0.5,
                   curve: Curves.easeOut,
                 ),
               ),
@@ -217,7 +216,6 @@ class ProductListScreenState extends State<ProductListScreen> with SingleTickerP
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Imagen del producto
           Expanded(
             flex: 3,
             child: Container(
@@ -227,7 +225,6 @@ class ProductListScreenState extends State<ProductListScreen> with SingleTickerP
               ),
               child: Stack(
                 children: [
-                  // Imagen
                   ClipRRect(
                     borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
                     child: Image.network(
@@ -268,7 +265,6 @@ class ProductListScreenState extends State<ProductListScreen> with SingleTickerP
                     ),
                   ),
                   
-                  // Descuento
                   if (product.discountPercentage > 0)
                     Positioned(
                       top: 6,
@@ -301,7 +297,6 @@ class ProductListScreenState extends State<ProductListScreen> with SingleTickerP
             ),
           ),
           
-          // Información del producto
           Expanded(
             flex: 2,
             child: Padding(
@@ -309,7 +304,6 @@ class ProductListScreenState extends State<ProductListScreen> with SingleTickerP
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Título
                   Expanded(
                     child: Text(
                       product.title,
@@ -325,7 +319,6 @@ class ProductListScreenState extends State<ProductListScreen> with SingleTickerP
                   
                   SizedBox(height: 4),
                   
-                  // Rating compacto
                   Row(
                     children: [
                       Icon(
@@ -335,7 +328,7 @@ class ProductListScreenState extends State<ProductListScreen> with SingleTickerP
                       ),
                       SizedBox(width: 2),
                       Text(
-                        '${product.rating.toStringAsFixed(1)}',
+                        product.rating.toStringAsFixed(1),
                         style: TextStyle(
                           color: AppTheme.textSecondary,
                           fontSize: 10,
@@ -355,7 +348,6 @@ class ProductListScreenState extends State<ProductListScreen> with SingleTickerP
                   
                   SizedBox(height: 6),
                   
-                  // Precio y botón
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     crossAxisAlignment: CrossAxisAlignment.center,
@@ -372,12 +364,11 @@ class ProductListScreenState extends State<ProductListScreen> with SingleTickerP
                       ),
                       GestureDetector(
                         onTap: () {
-                          // Usar el notificador para agregar al carrito
                           CartNotifier().addProduct(product);
                           
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: Text(product.title + ' agregado al carrito'),
+                              content: Text('${product.title} agregado al carrito'),
                               backgroundColor: AppTheme.accentGreen,
                               duration: Duration(seconds: 1),
                               behavior: SnackBarBehavior.floating,
